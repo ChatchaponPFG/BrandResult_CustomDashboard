@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Intelligence Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --navy:       #0A1628;
+  --navy-mid:   #0F2040;
+  --navy-light: #1A3260;
+  --accent:     #2563EB;
+  --accent-glow:#3B82F6;
+  --gold:       #F59E0B;
+  --surface:    #0D1B35;
+  --panel:      #111E38;
+  --panel-2:    #162540;
+  --border:     rgba(99,140,220,0.15);
+  --border-hi:  rgba(99,140,220,0.35);
+  --text-1:     #F0F4FF;
+  --text-2:     #8BA4CC;
+  --text-3:     #4A6299;
+  --sidebar-w:  280px;
+  --header-h:   56px;
+  --filter-h:   52px;
+  --anim:       cubic-bezier(0.4,0,0.2,1);
+}
+
+html, body { height:100%; overflow:hidden; font-family:'DM Sans',sans-serif; background:var(--navy); color:var(--text-1); }
+
+.shell { display:flex; height:100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar { width:var(--sidebar-w); flex-shrink:0; background:var(--panel); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; transition:width 0.35s var(--anim), opacity 0.3s var(--anim); }
+.sidebar.collapsed { width:0; opacity:0; pointer-events:none; }
+.sidebar-inner { width:var(--sidebar-w); display:flex; flex-direction:column; height:100%; overflow:hidden; }
+.sidebar-inner::-webkit-scrollbar { width:4px; }
+.sidebar-inner::-webkit-scrollbar-track { background:transparent; }
+.sidebar-inner::-webkit-scrollbar-thumb { background:var(--border-hi); border-radius:2px; }
+
+.sidebar-brand { padding:22px 20px 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.brand-tag { display:inline-block; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--accent-glow); background:rgba(37,99,235,.12); padding:3px 8px; border-radius:4px; border:1px solid rgba(37,99,235,.25); margin-bottom:8px; }
+.brand-title { font-size:17px; font-weight:600; color:var(--text-1); line-height:1.25; }
+.brand-sub { font-size:12px; color:var(--text-3); margin-top:3px; }
+
+.slots-section { padding:20px 20px 0; flex:1; min-height:0; overflow-y:auto; }
+.slots-section::-webkit-scrollbar { width:4px; }
+.slots-section::-webkit-scrollbar-track { background:transparent; }
+.slots-section::-webkit-scrollbar-thumb { background:var(--border-hi); border-radius:2px; }
+.section-label { font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text-3); margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+.slot-count-badge { font-size:10px; font-weight:600; font-family:'DM Mono',monospace; color:var(--accent-glow); background:rgba(37,99,235,.12); border:1px solid rgba(37,99,235,.25); padding:2px 7px; border-radius:4px; }
+
+.slot-group { margin-bottom:14px; }
+.slot-label { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:500; color:var(--text-2); margin-bottom:6px; }
+.slot-num { width:18px; height:18px; border-radius:4px; background:var(--panel-2); border:1px solid var(--border-hi); font-size:10px; font-weight:600; color:var(--accent-glow); display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; flex-shrink:0; }
+
+select { width:100%; padding:9px 12px; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; color:var(--text-1); font-family:'DM Sans',sans-serif; font-size:13px; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238BA4CC' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; cursor:pointer; transition:border-color .2s, background-color .2s; }
+select:hover { border-color:var(--border-hi); background-color:rgba(22,37,64,.8); }
+select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+select option { background:var(--panel); color:var(--text-1); }
+
+.sidebar-actions { padding:16px 20px 24px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:10px; flex-shrink:0; }
+
+.btn-primary { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:11px 16px; border:none; border-radius:9px; background:var(--accent); color:#fff; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; letter-spacing:.01em; transition:background .2s, transform .1s, box-shadow .2s; box-shadow:0 4px 16px rgba(37,99,235,.3); }
+.btn-primary:hover { background:#1d4ed8; box-shadow:0 4px 24px rgba(37,99,235,.45); }
+.btn-primary:active { transform:scale(.98); }
+
+.btn-ghost { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:10px 16px; border:1px solid var(--border-hi); border-radius:9px; background:transparent; color:var(--text-2); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:background .2s, color .2s, border-color .2s; }
+.btn-ghost:hover { background:var(--panel-2); color:var(--text-1); border-color:var(--border-hi); }
+.btn-ghost svg, .btn-primary svg { flex-shrink:0; }
+
+/* ── MAIN ── */
+.main { flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; }
+
+/* ── TOPBAR ── */
+.topbar { height:var(--header-h); flex-shrink:0; display:flex; align-items:center; gap:12px; padding:0 20px; border-bottom:1px solid var(--border); background:var(--panel); }
+.topbar-toggle { width:34px; height:34px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text-2); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .2s, border-color .2s, color .2s; }
+.topbar-toggle:hover { background:var(--panel-2); border-color:var(--border-hi); color:var(--text-1); }
+.topbar-divider { width:1px; height:20px; background:var(--border); flex-shrink:0; }
+.topbar-title { font-size:15px; font-weight:500; color:var(--text-1); white-space:nowrap; }
+.topbar-sub { font-size:12px; color:var(--text-3); }
+.topbar-pills { margin-left:auto; display:flex; align-items:center; gap:8px; }
+.status-dot { width:6px; height:6px; border-radius:50%; background:#22c55e; box-shadow:0 0 6px #22c55e; }
+.status-text { font-size:11px; color:var(--text-3); font-family:'DM Mono',monospace; }
+
+/* ── LAYOUT PICKER (slot count: 4 / 6 / 8) ── */
+.layout-picker { display:flex; gap:4px; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:4px; }
+.layout-btn {
+  display:flex; align-items:center; justify-content:center; gap:5px;
+  height:28px; padding:0 10px;
+  border:none; border-radius:5px;
+  background:transparent; color:var(--text-3);
+  font-family:'DM Mono',monospace; font-size:11px; font-weight:600;
+  cursor:pointer; white-space:nowrap;
+  transition:background .15s, color .15s;
+}
+.layout-btn.active { background:var(--navy-light); color:var(--text-1); }
+.layout-btn:hover:not(.active) { color:var(--text-2); }
+.layout-btn svg { flex-shrink:0; }
+
+/* ── FILTER BAR ── */
+.filter-bar { height:var(--filter-h); flex-shrink:0; display:flex; align-items:center; gap:10px; padding:0 20px; border-bottom:1px solid var(--border); background:var(--navy-mid); overflow-x:auto; overflow-y:hidden; }
+.filter-bar::-webkit-scrollbar { height:3px; }
+.filter-bar::-webkit-scrollbar-track { background:transparent; }
+.filter-bar::-webkit-scrollbar-thumb { background:var(--border-hi); border-radius:2px; }
+.filter-label { font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text-3); white-space:nowrap; flex-shrink:0; }
+.filter-divider { width:1px; height:20px; background:var(--border); flex-shrink:0; }
+.filter-group { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.filter-group-label { font-size:11px; font-weight:500; color:var(--text-3); white-space:nowrap; }
+
+.chip-row { display:flex; gap:5px; flex-wrap:nowrap; }
+.chip { display:flex; align-items:center; gap:4px; padding:4px 10px; border-radius:20px; border:1px solid var(--border-hi); background:transparent; color:var(--text-2); font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500; cursor:pointer; white-space:nowrap; transition:background .15s, color .15s, border-color .15s; user-select:none; }
+.chip:hover { background:var(--panel-2); color:var(--text-1); }
+.chip.active { background:rgba(37,99,235,.2); border-color:var(--accent-glow); color:var(--accent-glow); }
+
+.filter-select { padding:5px 28px 5px 10px; background:var(--panel-2); border:1px solid var(--border-hi); border-radius:7px; color:var(--text-1); font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238BA4CC' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; cursor:pointer; transition:border-color .2s; width:auto; }
+.filter-select:focus { outline:none; border-color:var(--accent); }
+.filter-select option { background:var(--panel); }
+
+.filter-apply { display:flex; align-items:center; gap:5px; padding:5px 12px; background:var(--accent); border:none; border-radius:7px; color:#fff; font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap; flex-shrink:0; transition:background .2s, transform .1s; box-shadow:0 2px 8px rgba(37,99,235,.35); }
+.filter-apply:hover { background:#1d4ed8; }
+.filter-apply:active { transform:scale(.97); }
+
+.filter-clear { display:flex; align-items:center; gap:4px; padding:5px 10px; background:transparent; border:1px solid var(--border); border-radius:7px; color:var(--text-3); font-family:'DM Sans',sans-serif; font-size:11px; cursor:pointer; white-space:nowrap; flex-shrink:0; transition:background .2s, color .2s, border-color .2s; }
+.filter-clear:hover { background:var(--panel-2); color:var(--text-2); border-color:var(--border-hi); }
+
+.filter-active-badge { display:none; width:6px; height:6px; border-radius:50%; background:var(--gold); box-shadow:0 0 5px var(--gold); margin-left:2px; }
+.filter-active-badge.visible { display:inline-block; }
+
+/* ── GRID ── */
+.grid-area { flex:1; padding:16px; display:grid; gap:14px; overflow:hidden; }
+
+/* 4-slot layouts */
+.grid-area.slots-4 { grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+
+/* 6-slot layouts */
+.grid-area.slots-6 { grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr; }
+
+/* 8-slot layouts */
+.grid-area.slots-8 { grid-template-columns:1fr 1fr 1fr 1fr; grid-template-rows:1fr 1fr; }
+
+/* ── CARDS ── */
+.card { background:var(--panel); border:1px solid var(--border); border-radius:14px; overflow:hidden; position:relative; display:flex; flex-direction:column; transition:border-color .2s, box-shadow .2s; }
+.card:hover { border-color:var(--border-hi); box-shadow:0 0 0 1px rgba(99,140,220,.1); }
+.card-header { height:42px; flex-shrink:0; display:flex; align-items:center; gap:10px; padding:0 16px; border-bottom:1px solid var(--border); background:var(--panel-2); }
+.card-icon { width:22px; height:22px; border-radius:5px; background:rgba(37,99,235,.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.card-name { font-size:12px; font-weight:600; color:var(--text-2); letter-spacing:.01em; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card-actions { display:flex; gap:4px; }
+.card-action-btn { width:24px; height:24px; border:none; border-radius:5px; background:transparent; color:var(--text-3); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s, color .15s; }
+.card-action-btn:hover { background:var(--panel); color:var(--text-2); }
+.card-body { flex:1; position:relative; overflow:hidden; }
+.card-body iframe { position:absolute; inset:0; width:100%; height:calc(100% + 60px); border:none; display:block; }
+
+.card-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--text-3); }
+.card-empty-icon { width:40px; height:40px; border-radius:10px; border:1.5px dashed var(--border-hi); display:flex; align-items:center; justify-content:center; }
+.card-empty span { font-size:12px; }
+
+.card-filter-pill { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:10px; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); font-size:10px; color:var(--gold); font-family:'DM Mono',monospace; white-space:nowrap; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+
+/* ── FULLSCREEN ── */
+.fullscreen-overlay { position:fixed; inset:0; z-index:500; background:var(--navy); display:none; flex-direction:column; }
+.fullscreen-overlay.active { display:flex; }
+.fullscreen-bar { height:48px; display:flex; align-items:center; padding:0 20px; gap:16px; border-bottom:1px solid var(--border); background:var(--panel); flex-shrink:0; }
+.fullscreen-title { font-size:14px; font-weight:500; color:var(--text-1); flex:1; }
+.fullscreen-close { border:1px solid var(--border); background:transparent; color:var(--text-2); padding:6px 14px; border-radius:7px; font-family:'DM Sans',sans-serif; font-size:12px; cursor:pointer; transition:background .2s, color .2s; }
+.fullscreen-close:hover { background:var(--panel-2); color:var(--text-1); }
+.fullscreen-frame { flex:1; width:100%; border:none; }
+
+/* ── PRESENTATION ── */
+body.presentation-mode .sidebar { width:0; opacity:0; pointer-events:none; }
+body.presentation-mode .topbar { display:none; }
+body.presentation-mode .filter-bar { display:none; }
+body.presentation-mode .grid-area { padding:0; gap:0; }
+body.presentation-mode .card { border-radius:0; border:none; border-right:1px solid var(--border); border-bottom:1px solid var(--border); }
+body.presentation-mode .card-header { display:none; }
+
+.exit-btn { position:fixed; bottom:20px; right:20px; z-index:999; background:var(--panel); border:1px solid var(--border-hi); color:var(--text-2); padding:8px 16px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; cursor:pointer; display:none; gap:6px; align-items:center; box-shadow:0 4px 20px rgba(0,0,0,.4); transition:background .2s, color .2s; }
+.exit-btn:hover { background:var(--panel-2); color:var(--text-1); }
+body.presentation-mode .exit-btn { display:flex; }
+
+/* ── TOAST ── */
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--panel-2); border:1px solid var(--border-hi); border-radius:9px; padding:10px 18px; font-size:13px; color:var(--text-1); display:flex; align-items:center; gap:8px; opacity:0; pointer-events:none; z-index:9000; transition:opacity .2s, transform .2s; box-shadow:0 8px 30px rgba(0,0,0,.4); }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+@media (max-width:900px) {
+  :root { --sidebar-w:260px; }
+  .topbar-pills { display:none; }
+  .chip { font-size:10px; padding:3px 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-inner">
+
+      <div class="sidebar-brand">
+        <div class="brand-tag">Market Intelligence</div>
+        <div class="brand-title">Dashboard Builder</div>
+        <div class="brand-sub">Configure your visual layout below</div>
+      </div>
+
+      <div class="slots-section">
+        <div class="section-label">
+          Visual Slots
+          <span class="slot-count-badge" id="slotCountBadge">4 slots</span>
+        </div>
+        <div id="slotsContainer">
+          <!-- Slots are rendered dynamically by JS -->
+        </div>
+      </div>
+
+      <div class="sidebar-actions">
+        <button class="btn-primary" onclick="generateDashboard()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg>
+          Generate Dashboard
+        </button>
+        <button class="btn-ghost" onclick="togglePresentation()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+          Presentation Mode
+        </button>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <button class="topbar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-divider"></div>
+      <div>
+        <div class="topbar-title">
+          Market Intelligence
+          <span class="filter-active-badge" id="filterBadge" title="Filters active"></span>
+        </div>
+        <div class="topbar-sub">Power BI Dashboard</div>
+      </div>
+
+      <div class="topbar-pills">
+        <div class="status-dot"></div>
+        <span class="status-text">LIVE</span>
+        <div style="width:1px;height:18px;background:var(--border);margin:0 6px;"></div>
+
+        <!-- LAYOUT PICKER: 4 / 6 / 8 slots -->
+        <div class="layout-picker">
+
+          <!-- 4 slots: 2×2 -->
+          <button class="layout-btn active" id="lbtn-4" title="4 panels (2×2)" onclick="setSlotCount(4, this)">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor">
+              <rect x="0" y="0" width="5.5" height="5.5" rx="1"/>
+              <rect x="7.5" y="0" width="5.5" height="5.5" rx="1"/>
+              <rect x="0" y="7.5" width="5.5" height="5.5" rx="1"/>
+              <rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1"/>
+            </svg>
+            4
+          </button>
+
+          <!-- 6 slots: 3×2 -->
+          <button class="layout-btn" id="lbtn-6" title="6 panels (3×2)" onclick="setSlotCount(6, this)">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor">
+              <rect x="0"   y="0"   width="3.2" height="5.5" rx="1"/>
+              <rect x="4.9" y="0"   width="3.2" height="5.5" rx="1"/>
+              <rect x="9.8" y="0"   width="3.2" height="5.5" rx="1"/>
+              <rect x="0"   y="7.5" width="3.2" height="5.5" rx="1"/>
+              <rect x="4.9" y="7.5" width="3.2" height="5.5" rx="1"/>
+              <rect x="9.8" y="7.5" width="3.2" height="5.5" rx="1"/>
+            </svg>
+            6
+          </button>
+
+          <!-- 8 slots: 4×2 -->
+          <button class="layout-btn" id="lbtn-8" title="8 panels (4×2)" onclick="setSlotCount(8, this)">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor">
+              <rect x="0"    y="0"   width="2.2" height="5.5" rx="1"/>
+              <rect x="3.6"  y="0"   width="2.2" height="5.5" rx="1"/>
+              <rect x="7.2"  y="0"   width="2.2" height="5.5" rx="1"/>
+              <rect x="10.8" y="0"   width="2.2" height="5.5" rx="1"/>
+              <rect x="0"    y="7.5" width="2.2" height="5.5" rx="1"/>
+              <rect x="3.6"  y="7.5" width="2.2" height="5.5" rx="1"/>
+              <rect x="7.2"  y="7.5" width="2.2" height="5.5" rx="1"/>
+              <rect x="10.8" y="7.5" width="2.2" height="5.5" rx="1"/>
+            </svg>
+            8
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <span class="filter-label">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:-1px;margin-right:4px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filters
+      </span>
+      <div class="filter-divider"></div>
+
+      <!-- Brand -->
+      <div class="filter-group">
+        <span class="filter-group-label">Brand</span>
+        <select class="filter-select" id="brandSelect">
+          <option value="">All Brands</option>
+          <option value="MongkutTalay">MongkutTalay</option>
+          <option value="Nautilus">Nautilus</option>
+          <option value="NautilusLite">NautilusLite</option>
+          <option value="Regalos">Regalos</option>
+          <option value="Seacrown">Seacrown</option>
+          <option value="Titan">Titan</option>
+        </select>
+      </div>
+      <div class="filter-divider"></div>
+
+      <!-- Period -->
+      <div class="filter-group">
+        <span class="filter-group-label">Period</span>
+        <select class="filter-select" id="periodSelect">
+          <option value="">All Periods</option>
+          <optgroup label="── 2025 ──">
+            <option value="January 2025">January 2025</option>
+            <option value="February 2025">February 2025</option>
+            <option value="March 2025">March 2025</option>
+            <option value="April 2025">April 2025</option>
+            <option value="May 2025">May 2025</option>
+            <option value="June 2025">June 2025</option>
+            <option value="July 2025">July 2025</option>
+            <option value="August 2025">August 2025</option>
+            <option value="September 2025">September 2025</option>
+            <option value="October 2025">October 2025</option>
+            <option value="November 2025">November 2025</option>
+            <option value="December 2025">December 2025</option>
+          </optgroup>
+          <optgroup label="── 2026 ──">
+            <option value="January 2026">January 2026</option>
+            <option value="February 2026">February 2026</option>
+            <option value="March 2026">March 2026</option>
+            <option value="April 2026">April 2026</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="filter-divider"></div>
+
+      <!-- Sub-Channel -->
+      <div class="filter-group">
+        <span class="filter-group-label">Sub-Channel</span>
+        <select class="filter-select" id="channelSelect">
+          <option value="">All Channels</option>
+          <option value="Allonline">Allonline</option>
+          <option value="CVS">CVS</option>
+          <option value="EC">EC</option>
+          <option value="EXPORT">EXPORT</option>
+          <option value="Hyper">Hyper</option>
+          <option value="Other">Other</option>
+          <option value="Pet Shop">Pet Shop</option>
+          <option value="Sino">Sino</option>
+          <option value="SPHP">SPHP</option>
+          <option value="Subdist">Subdist</option>
+          <option value="The welfare to employees / Event Sales">Welfare / Event Sales</option>
+          <option value="TT">TT</option>
+        </select>
+      </div>
+      <div class="filter-divider"></div>
+
+      <!-- Product Group -->
+      <div class="filter-group">
+        <span class="filter-group-label">Product Group</span>
+        <select class="filter-select" id="productGroupSelect">
+          <option value="">All Groups</option>
+          <option value="Cat">Cat</option>
+          <option value="Crab">Crab</option>
+          <option value="Dog">Dog</option>
+          <option value="Frozen">Frozen</option>
+          <option value="Leisure">Leisure</option>
+          <option value="Mac Basic">Mac Basic</option>
+          <option value="Mac VAP">Mac VAP</option>
+          <option value="Multigrain">Multigrain</option>
+          <option value="Other VAP">Other VAP</option>
+          <option value="Petfood">Petfood</option>
+          <option value="Salmon">Salmon</option>
+          <option value="Sar Basic">Sar Basic</option>
+          <option value="Tuna Basic">Tuna Basic</option>
+          <option value="Tuna Basic (+)">Tuna Basic (+)</option>
+          <option value="Tuna VAP">Tuna VAP</option>
+        </select>
+      </div>
+      <div class="filter-divider"></div>
+
+      <button class="filter-apply" onclick="applyFilters()">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+        Apply
+      </button>
+      <button class="filter-clear" onclick="clearFilters()">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Clear
+      </button>
+      <button class="filter-clear" onclick="debugFilterUrl()" title="Inspect generated filter URL">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Debug URL
+      </button>
+    </div>
+
+    <!-- GRID — rendered dynamically -->
+    <div class="grid-area slots-4" id="grid"></div>
+
+  </div>
+</div>
+
+<!-- FULLSCREEN -->
+<div class="fullscreen-overlay" id="fullscreenOverlay">
+  <div class="fullscreen-bar">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+    <div class="fullscreen-title" id="fullscreenTitle">Report</div>
+    <button class="fullscreen-close" onclick="closeFullscreen()">✕ Close</button>
+  </div>
+  <iframe class="fullscreen-frame" id="fullscreenFrame" src="" allowfullscreen></iframe>
+</div>
+
+<button class="exit-btn" onclick="togglePresentation()">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9l6 6m0-6l-6 6"/></svg>
+  Exit Presentation
+</button>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const REPORT_URL = 'https://app.powerbi.com/view?r=eyJrIjoiNmI3NTU5MGMtYzg2Yy00MTk4LWE0NDYtYzg4MTA4YjkzZmI0IiwidCI6IjIyZTY1OThjLWMzMmMtNDgxMC1iMGQ5LTA2NjE4ZTJhZThiMSIsImMiOjEwfQ%3D%3D';
+
+const VISUALS = {
+  gross: {
+    name: 'Gross Sale',
+    page: '1452f650d2c99440a31e',
+    icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>`
+  },
+  channel: {
+    name: 'Channel Analysis',
+    page: '8e6c9a0442737ee8e0dd',
+    icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><path d="M18 14v1a2 2 0 0 1-2 2H8"/></svg>`
+  },
+  top20: {
+    name: 'Top 20 Products',
+    page: 'f86c2fcc3d9e07b9bb29',
+    icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`
+  },
+  summary: {
+    name: 'Overall Summary',
+    page: '0713b3b380057c961022',
+    icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>`
+  },
+  segmentGP0: {
+    name: 'Segment Positioning GP0%',
+    page: '94e32098d4b4765b146c',
+    icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`
+  },
+  segmentGP1: {
+    name: 'Segment Positioning GP1%',
+    page: '43ecf68d604cc5eba109',
+    icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`
+  },
+  segmentGP2: {
+    name: 'Segment Positioning GP2%',
+    page: 'b7e2fa4c4298786e2322',
+    icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`
+  },
+  segmentGP3: {
+    name: 'Segment Positioning GP3%',
+    page: '582caf61e4b0a5ee4e89',
+    icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`
+  }
+};
+
+// Human-readable position labels for each slot index
+const POSITION_LABELS = {
+  4: ['Top Left','Top Right','Bottom Left','Bottom Right'],
+  6: ['Row 1 · Col 1','Row 1 · Col 2','Row 1 · Col 3','Row 2 · Col 1','Row 2 · Col 2','Row 2 · Col 3'],
+  8: ['R1·C1','R1·C2','R1·C3','R1·C4','R2·C1','R2·C2','R2·C3','R2·C4']
+};
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+// Power BI OData URL encoding rules:
+//   spaces → _x0020_   ampersand → _x0026_
+// Table "FY25 & BG26" → "FY25_x0020__x0026__x0020_BG26"
+const BRAND_TABLE_ENCODED        = "FY25_x0020__x0026__x0020_BG26";
+const BRAND_FIELD                = "Brand";
+const PERIOD_TABLE_ENCODED       = "Base_Period";
+const CHANNEL_TABLE_ENCODED      = "FY25_x0020__x0026__x0020_BG26";
+const CHANNEL_FIELD              = "Sub-Channel";                      // ✅ exact column name
+const PRODUCT_GROUP_TABLE_ENCODED= "FY25_x0020__x0026__x0020_BG26";
+const PRODUCT_GROUP_FIELD        = "PRODUCT_x0020_GROUP";              // ✅ "PRODUCT GROUP (groups)" → base field name
+// PeriodDate is a Date/time column — values must be sent as datetime'YYYY-MM-DDT00:00:00'
+// Map from dropdown display value → ISO date string
+const PERIOD_DATE_MAP = {
+  "January 2025":   "2025-01-01T00:00:00",
+  "February 2025":  "2025-02-01T00:00:00",
+  "March 2025":     "2025-03-01T00:00:00",
+  "April 2025":     "2025-04-01T00:00:00",
+  "May 2025":       "2025-05-01T00:00:00",
+  "June 2025":      "2025-06-01T00:00:00",
+  "July 2025":      "2025-07-01T00:00:00",
+  "August 2025":    "2025-08-01T00:00:00",
+  "September 2025": "2025-09-01T00:00:00",
+  "October 2025":   "2025-10-01T00:00:00",
+  "November 2025":  "2025-11-01T00:00:00",
+  "December 2025":  "2025-12-01T00:00:00",
+  "January 2026":   "2026-01-01T00:00:00",
+  "February 2026":  "2026-02-01T00:00:00",
+  "March 2026":     "2026-03-01T00:00:00",
+  "April 2026":     "2026-04-01T00:00:00",
+};
+
+let activeBrand        = '';   // single dropdown — was a Set, now plain string
+let activePeriod       = '';
+let activeChannel      = '';
+let activeProductGroup = '';
+let currentSlots       = 4;
+let slotValues         = {};
+
+// ── SLOT OPTIONS HTML (shared) ──────────────────────────────────────────────
+function visualOptionsHTML(selected) {
+  const opts = [
+    ['', '— Select a visual —'],
+    ['gross',      'Gross Sale'],
+    ['channel',    'Channel Analysis'],
+    ['top20',      'Top 20 Products'],
+    ['summary',    'Overall Summary'],
+    ['segmentGP0', 'Segment Positioning (GP0%)'],
+    ['segmentGP1', 'Segment Positioning (GP1%)'],
+    ['segmentGP2', 'Segment Positioning (GP2%)'],
+    ['segmentGP3', 'Segment Positioning (GP3%)'],
+  ];
+  return opts.map(([v, l]) =>
+    `<option value="${v}"${v === selected ? ' selected' : ''}>${l}</option>`
+  ).join('');
+}
+
+// ── SIDEBAR SLOTS RENDER ────────────────────────────────────────────────────
+function renderSidebarSlots(count) {
+  const labels = POSITION_LABELS[count];
+  const container = document.getElementById('slotsContainer');
+  document.getElementById('slotCountBadge').textContent = count + ' slots';
+
+  let html = '';
+  for (let i = 1; i <= count; i++) {
+    const id  = 'slot' + i;
+    const val = slotValues[id] || '';
+    html += `
+      <div class="slot-group">
+        <div class="slot-label">
+          <span class="slot-num">${i}</span>
+          Slot ${i} — ${labels[i-1]}
+        </div>
+        <select id="${id}" onchange="slotValues['${id}']=this.value">
+          ${visualOptionsHTML(val)}
+        </select>
+      </div>`;
+  }
+  container.innerHTML = html;
+
+  // Re-sync slotValues from the selects (in case count shrank)
+  for (let i = 1; i <= count; i++) {
+    const sel = document.getElementById('slot' + i);
+    if (sel) slotValues['slot' + i] = sel.value;
+  }
+}
+
+// ── GRID RENDER ─────────────────────────────────────────────────────────────
+function renderGrid(count) {
+  const grid = document.getElementById('grid');
+  grid.className = 'grid-area slots-' + count;
+
+  let html = '';
+  for (let i = 1; i <= count; i++) {
+    html += `<div class="card" id="card${i}"></div>`;
+  }
+  grid.innerHTML = html;
+}
+
+// ── SET SLOT COUNT (layout picker) ──────────────────────────────────────────
+function setSlotCount(count, btn) {
+  // Save current select values before re-rendering
+  for (let i = 1; i <= currentSlots; i++) {
+    const sel = document.getElementById('slot' + i);
+    if (sel) slotValues['slot' + i] = sel.value;
+  }
+
+  currentSlots = count;
+
+  document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  renderSidebarSlots(count);
+  renderGrid(count);
+
+  // Show empty state for all cards
+  for (let i = 1; i <= count; i++) {
+    renderEmptyCard('card' + i, i - 1);
+  }
+
+  showToast(`Layout changed to ${count} panels`);
+}
+
+// ── FILTER URL ──────────────────────────────────────────────────────────────
+function buildFilterParam() {
+  const parts = [];
+
+  // 1. Brand
+  if (activeBrand) {
+    parts.push(`${BRAND_TABLE_ENCODED}/${BRAND_FIELD} eq '${activeBrand}'`);
+  }
+
+  // 2. Period — PeriodDate is Date/time, must use datetime'' OData syntax
+  if (activePeriod) {
+    const isoDate = PERIOD_DATE_MAP[activePeriod];
+    if (isoDate) {
+      parts.push(`${PERIOD_TABLE_ENCODED}/PeriodDate eq datetime'${isoDate}'`);
+    }
+  }
+
+  // 3. Sub-Channel
+  if (activeChannel) {
+    parts.push(`${CHANNEL_TABLE_ENCODED}/${CHANNEL_FIELD} eq '${activeChannel}'`);
+  }
+
+  // 4. Product Group
+  if (activeProductGroup) {
+    parts.push(`${PRODUCT_GROUP_TABLE_ENCODED}/${PRODUCT_GROUP_FIELD} eq '${activeProductGroup}'`);
+  }
+
+  if (parts.length === 0) return '';
+  return '&filter=' + parts.join(' and ');
+}
+
+function buildUrl(pageId) {
+  return REPORT_URL + '&pageName=' + pageId + buildFilterParam();
+}
+
+// ── FILTER UI ───────────────────────────────────────────────────────────────
+
+function applyFilters() {
+  activeBrand        = document.getElementById('brandSelect').value;
+  activePeriod       = document.getElementById('periodSelect').value;
+  activeChannel      = document.getElementById('channelSelect').value;
+  activeProductGroup = document.getElementById('productGroupSelect').value;
+
+  const hasFilters = activeBrand || activePeriod || activeChannel || activeProductGroup;
+  document.getElementById('filterBadge').classList.toggle('visible', !!hasFilters);
+
+  for (let i = 1; i <= currentSlots; i++) {
+    const key = slotValues['slot' + i] || '';
+    if (key) loadCard('card' + i, key, i - 1);
+  }
+
+  const parts = [];
+  if (activeBrand)        parts.push(activeBrand);
+  if (activePeriod)       parts.push(activePeriod);
+  if (activeChannel)      parts.push(activeChannel);
+  if (activeProductGroup) parts.push(activeProductGroup);
+  showToast(hasFilters ? 'Filtered: ' + parts.join(' · ') : 'Filters cleared — showing all data');
+}
+
+function clearFilters() {
+  activeBrand        = '';
+  activePeriod       = '';
+  activeChannel      = '';
+  activeProductGroup = '';
+  document.getElementById('brandSelect').value        = '';
+  document.getElementById('periodSelect').value       = '';
+  document.getElementById('channelSelect').value      = '';
+  document.getElementById('productGroupSelect').value = '';
+  document.getElementById('filterBadge').classList.remove('visible');
+  for (let i = 1; i <= currentSlots; i++) {
+    const key = slotValues['slot' + i] || '';
+    if (key) loadCard('card' + i, key, i - 1);
+  }
+  showToast('Filters cleared — showing all data');
+}
+
+// ── CARD RENDERING ──────────────────────────────────────────────────────────
+function buildFilterSummary() {
+  const parts = [];
+  if (activeBrand)        parts.push(activeBrand);
+  if (activePeriod)       parts.push(activePeriod);
+  if (activeChannel)      parts.push(activeChannel);
+  if (activeProductGroup) parts.push(activeProductGroup);
+  return parts.join(' · ');
+}
+
+function renderEmptyCard(cardId, slotIndex) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const labels = POSITION_LABELS[currentSlots];
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="card-name" style="color:var(--text-3);">Slot ${slotIndex+1} — ${labels[slotIndex]}</div>
+    </div>
+    <div class="card-empty">
+      <div class="card-empty-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8m-4-4h8"/></svg>
+      </div>
+      <span>No visual selected</span>
+    </div>`;
+}
+
+function loadCard(cardId, key, slotIndex) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+
+  if (!key) { renderEmptyCard(cardId, slotIndex); return; }
+
+  const v             = VISUALS[key];
+  if (!v) { renderEmptyCard(cardId, slotIndex); return; }
+
+  const filteredUrl   = buildUrl(v.page);
+  const filterSummary = buildFilterSummary();
+  const filterPill    = filterSummary
+    ? `<span class="card-filter-pill" title="${filterSummary}">
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        ${filterSummary}
+      </span>`
+    : '';
+
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="card-icon">${v.icon}</div>
+      <div class="card-name">${v.name}</div>
+      ${filterPill}
+      <div class="card-actions">
+        <button class="card-action-btn" title="Open fullscreen" onclick="openFullscreen('${key}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
+        <button class="card-action-btn" title="Reload" onclick="reloadCard('${cardId}','${key}',${slotIndex})">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <iframe src="${filteredUrl}" allowfullscreen loading="lazy"></iframe>
+    </div>`;
+}
+
+function reloadCard(cardId, key, slotIndex) {
+  loadCard(cardId, key, slotIndex);
+  showToast('Reloading ' + VISUALS[key].name + '…');
+}
+
+// ── GENERATE ────────────────────────────────────────────────────────────────
+function generateDashboard() {
+  // Sync latest select values first
+  for (let i = 1; i <= currentSlots; i++) {
+    const sel = document.getElementById('slot' + i);
+    if (sel) slotValues['slot' + i] = sel.value;
+  }
+  // Render each card
+  for (let i = 1; i <= currentSlots; i++) {
+    loadCard('card' + i, slotValues['slot' + i] || '', i - 1);
+  }
+  showToast('Dashboard updated — ' + currentSlots + ' panels');
+}
+
+// ── NAVIGATION ──────────────────────────────────────────────────────────────
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+
+function togglePresentation() {
+  document.body.classList.toggle('presentation-mode');
+  showToast(document.body.classList.contains('presentation-mode')
+    ? 'Presentation mode — Escape to exit'
+    : 'Exited presentation mode');
+}
+
+function openFullscreen(key) {
+  const v = VISUALS[key];
+  document.getElementById('fullscreenTitle').textContent = v.name;
+  document.getElementById('fullscreenFrame').src = buildUrl(v.page);
+  document.getElementById('fullscreenOverlay').classList.add('active');
+}
+
+function closeFullscreen() {
+  document.getElementById('fullscreenOverlay').classList.remove('active');
+  document.getElementById('fullscreenFrame').src = '';
+}
+
+let toastTimer;
+function showToast(msg, duration) {
+  const t = document.getElementById('toast');
+  t.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg> ${msg}`;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration || 3000);
+}
+
+// ── FILTER TESTER ────────────────────────────────────────────────────────────
+function debugFilterUrl() {
+  const existing = document.getElementById('debugOverlay');
+  if (existing) existing.remove();
+
+  // Generate all encoding variants to try for Brand=Nautilus as a test
+  const BASE = REPORT_URL + '&pageName=' + (VISUALS[Object.values(slotValues).find(v=>v) || 'summary']?.page || VISUALS.summary.page);
+
+  const variants = [
+    {
+      label: 'Variant A — Standard OData (space=_x0020_, &=_x0026_)',
+      filter: `FY25_x0020__x0026__x0020_BG26/Brand eq 'Nautilus'`
+    },
+    {
+      label: 'Variant B — URL encoded table name',
+      filter: `FY25%20%26%20BG26/Brand eq 'Nautilus'`
+    },
+    {
+      label: 'Variant C — Single quotes URL encoded',
+      filter: `FY25_x0020__x0026__x0020_BG26/Brand eq %27Nautilus%27`
+    },
+    {
+      label: 'Variant D — Sub-Channel test (if Brand works)',
+      filter: `FY25_x0020__x0026__x0020_BG26/Brand eq 'Nautilus' and FY25_x0020__x0026__x0020_BG26/Sub-Channel eq 'CVS'`
+    },
+    {
+      label: 'Variant E — Sub-Channel with hyphen encoded',
+      filter: `FY25_x0020__x0026__x0020_BG26/Brand eq 'Nautilus' and FY25_x0020__x0026__x0020_BG26/Sub_x002D_Channel eq 'CVS'`
+    },
+    {
+      label: 'Variant F — Product Group (groups) field',
+      filter: `FY25_x0020__x0026__x0020_BG26/Brand eq 'Nautilus' and FY25_x0020__x0026__x0020_BG26/PRODUCT_x0020_GROUP eq 'Tuna Basic'`
+    },
+    {
+      label: 'Variant G — Current active filters',
+      filter: buildFilterParam().replace('&filter=','') || '(no filters selected)'
+    },
+  ];
+
+  const overlay = document.createElement('div');
+  overlay.id = 'debugOverlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    font-family:'DM Sans',sans-serif;
+  `;
+
+  const rows = variants.map((v, i) => {
+    const fullUrl = BASE + '&filter=' + v.filter;
+    const id = 'vurl_' + i;
+    return `
+      <div style="
+        background:var(--panel-2);border:1px solid var(--border);border-radius:10px;
+        padding:14px;display:flex;flex-direction:column;gap:8px;
+      ">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);">${v.label}</div>
+          <button onclick="window.open(document.getElementById('${id}').textContent,'_blank')" style="
+            flex-shrink:0;padding:4px 10px;background:var(--accent);border:none;border-radius:6px;
+            color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;
+          ">▶ Test</button>
+        </div>
+        <div style="
+          font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);
+          background:var(--navy);border-radius:6px;padding:8px 10px;
+          word-break:break-all;line-height:1.5;
+        ">${v.filter}</div>
+        <div id="${id}" style="display:none;">${fullUrl}</div>
+      </div>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div style="
+      background:var(--panel);border:1px solid var(--border-hi);border-radius:14px;
+      padding:24px;max-width:820px;width:100%;display:flex;flex-direction:column;gap:14px;
+      box-shadow:0 20px 60px rgba(0,0,0,.6);max-height:90vh;overflow-y:auto;
+    ">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0;">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--text-1);">🔬 Filter Tester</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:4px;line-height:1.5;">
+            Click <strong style="color:var(--accent-glow)">▶ Test</strong> on each variant below to open it in a new tab.<br>
+            The one that filters your Power BI report correctly is the format to use.
+          </div>
+        </div>
+        <button onclick="document.getElementById('debugOverlay').remove()" style="
+          flex-shrink:0;border:1px solid var(--border);background:transparent;color:var(--text-2);
+          padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;
+        ">✕ Close</button>
+      </div>
+
+      <div style="
+        background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);
+        border-radius:8px;padding:12px 14px;font-size:11px;color:var(--accent-glow);line-height:1.6;flex-shrink:0;
+      ">
+        <strong>Instructions:</strong> Test each variant — look for one where <em>Brand = Nautilus</em> actually filters the report.
+        Once you find the working variant, tell me the letter (A–G) and I'll lock that format in for all filters.
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${rows}
+      </div>
+
+      <div style="
+        background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);
+        border-radius:8px;padding:12px 14px;font-size:11px;color:var(--gold);line-height:1.6;flex-shrink:0;
+      ">
+        <strong>⚠️ Important — after finding the working variant:</strong><br>
+        Also check that your hidden sync slicers in Power BI are set up correctly:<br>
+        • Brand slicer → field: <code>FY25 &amp; BG26[Brand]</code> → synced + hidden on ALL pages<br>
+        • Sub-Channel slicer → field: <code>FY25 &amp; BG26[Sub-Channel]</code> → synced + hidden on ALL pages<br>
+        • Product Group slicer → field: <code>FY25 &amp; BG26[PRODUCT GROUP (groups)]</code> → synced + hidden on ALL pages<br>
+        • Period slicer → field: <code>Base_Period[PeriodDate]</code> → synced + hidden on ALL pages<br>
+        Then re-publish to web and paste the new URL into <code>REPORT_URL</code> in the code.
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('fullscreenOverlay').classList.contains('active')) closeFullscreen();
+    else if (document.body.classList.contains('presentation-mode')) togglePresentation();
+  }
+});
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+slotValues = { slot1:'summary', slot2:'gross', slot3:'channel', slot4:'top20' };
+renderSidebarSlots(4);
+renderGrid(4);
+generateDashboard();
+</script>
+</body>
+</html>
