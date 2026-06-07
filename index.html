@@ -11,32 +11,57 @@
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
 :root {
-  --navy:       #0A1628;
-  --navy-mid:   #0F2040;
-  --navy-light: #1A3260;
-  --accent:     #2563EB;
+  /* DARK THEME */
+  --navy:#0A1628;
+  --navy-mid:#0F2040;
+  --navy-light:#1A3260;
+
+  --accent:#2563EB;
   --accent-glow:#3B82F6;
-  --gold:       #F59E0B;
-  --surface:    #0D1B35;
-  --panel:      #111E38;
-  --panel-2:    #162540;
-  --border:     rgba(99,140,220,0.15);
-  --border-hi:  rgba(99,140,220,0.35);
-  --text-1:     #F0F4FF;
-  --text-2:     #8BA4CC;
-  --text-3:     #4A6299;
-  --sidebar-w:  280px;
-  --header-h:   56px;
-  --filter-h:   52px;
-  --anim:       cubic-bezier(0.4,0,0.2,1);
+  --gold:#F59E0B;
+
+  --surface:#0D1B35;
+  --panel:#111E38;
+  --panel-2:#162540;
+
+  --border:rgba(99,140,220,.15);
+  --border-hi:rgba(99,140,220,.35);
+
+  --text-1:#F0F4FF;
+  --text-2:#8BA4CC;
+  --text-3:#4A6299;
+
+  --sidebar-w:280px;
+  --header-h:56px;
+  --filter-h:52px;
+  --anim:cubic-bezier(.4,0,.2,1);
+}
+
+body.light-mode {
+  --navy:#F5F7FB;
+  --navy-mid:#FFFFFF;
+  --navy-light:#E8EEF9;
+
+  --surface:#FFFFFF;
+  --panel:#FFFFFF;
+  --panel-2:#F7F9FC;
+
+  --border:rgba(0,0,0,.08);
+  --border-hi:rgba(0,0,0,.15);
+
+  --text-1:#0F172A;
+  --text-2:#475569;
+  --text-3:#94A3B8;
+
+  background:#F5F7FB;
 }
 
 html, body { height:100%; overflow:hidden; font-family:'DM Sans',sans-serif; background:var(--navy); color:var(--text-1); }
 
-.shell { display:flex; height:100vh; }
+.shell { display:flex; height:100vh; position: relative; overflow: hidden; }
 
 /* ── SIDEBAR ── */
-.sidebar { width:var(--sidebar-w); flex-shrink:0; background:var(--panel); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; transition:width 0.35s var(--anim), opacity 0.3s var(--anim); }
+.sidebar { width:var(--sidebar-w); flex-shrink:0; background:var(--panel); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; transition:width 0.35s var(--anim), opacity 0.3s var(--anim), transform 0.35s var(--anim); }
 .sidebar.collapsed { width:0; opacity:0; pointer-events:none; }
 .sidebar-inner { width:var(--sidebar-w); display:flex; flex-direction:column; height:100%; overflow:hidden; }
 .sidebar-inner::-webkit-scrollbar { width:4px; }
@@ -187,10 +212,43 @@ body.presentation-mode .exit-btn { display:flex; }
 .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--panel-2); border:1px solid var(--border-hi); border-radius:9px; padding:10px 18px; font-size:13px; color:var(--text-1); display:flex; align-items:center; gap:8px; opacity:0; pointer-events:none; z-index:9000; transition:opacity .2s, transform .2s; box-shadow:0 8px 30px rgba(0,0,0,.4); }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-@media (max-width:900px) {
-  :root { --sidebar-w:260px; }
-  .topbar-pills { display:none; }
-  .chip { font-size:10px; padding:3px 8px; }
+/* ── RESPONSIVE MOBILE LAYOUT ── */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 260px; }
+  
+  /* Sidebar Overlay */
+  .sidebar { 
+    position: fixed; 
+    z-index: 2000; 
+    height: 100%; 
+    box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+  }
+  .sidebar.collapsed { transform: translateX(-100%); width: var(--sidebar-w); opacity: 1; pointer-events: none; }
+  
+  /* Simplify Topbar for Mobile */
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar-title { font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-sub { display: none; }
+  .status-text { display: none; }
+  .layout-btn { padding: 0 6px; }
+  
+  /* Vertical Stacked Grid */
+  .grid-area {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Ensure the grid itself scrolls */
+    padding: 12px;
+  }
+  
+  /* Force single column overrides */
+  .grid-area.slots-4, .grid-area.slots-6, .grid-area.slots-8 {
+    grid-template-columns: none;
+    grid-template-rows: none;
+  }
+  
+  /* Give iframes breathing room */
+  .card { min-height: 350px; flex-shrink: 0; }
+  .chip { font-size: 10px; padding: 3px 8px; }
 }
 </style>
 </head>
@@ -198,7 +256,6 @@ body.presentation-mode .exit-btn { display:flex; }
 
 <div class="shell">
 
-  <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-inner">
 
@@ -214,8 +271,7 @@ body.presentation-mode .exit-btn { display:flex; }
           <span class="slot-count-badge" id="slotCountBadge">4 slots</span>
         </div>
         <div id="slotsContainer">
-          <!-- Slots are rendered dynamically by JS -->
-        </div>
+          </div>
       </div>
 
       <div class="sidebar-actions">
@@ -232,10 +288,8 @@ body.presentation-mode .exit-btn { display:flex; }
     </div>
   </aside>
 
-  <!-- MAIN -->
   <div class="main">
 
-    <!-- TOPBAR -->
     <div class="topbar">
       <button class="topbar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -254,10 +308,20 @@ body.presentation-mode .exit-btn { display:flex; }
         <span class="status-text">LIVE</span>
         <div style="width:1px;height:18px;background:var(--border);margin:0 6px;"></div>
 
-        <!-- LAYOUT PICKER: 4 / 6 / 8 slots -->
+        <button class="topbar-toggle" onclick="toggleTheme()" title="Theme">
+          <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+          </svg>
+        </button>
+
         <div class="layout-picker">
 
-          <!-- 4 slots: 2×2 -->
           <button class="layout-btn active" id="lbtn-4" title="4 panels (2×2)" onclick="setSlotCount(4, this)">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor">
               <rect x="0" y="0" width="5.5" height="5.5" rx="1"/>
@@ -268,7 +332,6 @@ body.presentation-mode .exit-btn { display:flex; }
             4
           </button>
 
-          <!-- 6 slots: 3×2 -->
           <button class="layout-btn" id="lbtn-6" title="6 panels (3×2)" onclick="setSlotCount(6, this)">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor">
               <rect x="0"   y="0"   width="3.2" height="5.5" rx="1"/>
@@ -281,7 +344,6 @@ body.presentation-mode .exit-btn { display:flex; }
             6
           </button>
 
-          <!-- 8 slots: 4×2 -->
           <button class="layout-btn" id="lbtn-8" title="8 panels (4×2)" onclick="setSlotCount(8, this)">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor">
               <rect x="0"    y="0"   width="2.2" height="5.5" rx="1"/>
@@ -300,7 +362,6 @@ body.presentation-mode .exit-btn { display:flex; }
       </div>
     </div>
 
-    <!-- FILTER BAR -->
     <div class="filter-bar">
       <span class="filter-label">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:-1px;margin-right:4px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -308,7 +369,6 @@ body.presentation-mode .exit-btn { display:flex; }
       </span>
       <div class="filter-divider"></div>
 
-      <!-- Brand -->
       <div class="filter-group">
         <span class="filter-group-label">Brand</span>
         <select class="filter-select" id="brandSelect">
@@ -323,7 +383,6 @@ body.presentation-mode .exit-btn { display:flex; }
       </div>
       <div class="filter-divider"></div>
 
-      <!-- Period -->
       <div class="filter-group">
         <span class="filter-group-label">Period</span>
         <select class="filter-select" id="periodSelect">
@@ -352,7 +411,6 @@ body.presentation-mode .exit-btn { display:flex; }
       </div>
       <div class="filter-divider"></div>
 
-      <!-- Sub-Channel -->
       <div class="filter-group">
         <span class="filter-group-label">Sub-Channel</span>
         <select class="filter-select" id="channelSelect">
@@ -373,7 +431,6 @@ body.presentation-mode .exit-btn { display:flex; }
       </div>
       <div class="filter-divider"></div>
 
-      <!-- Product Group -->
       <div class="filter-group">
         <span class="filter-group-label">Product Group</span>
         <select class="filter-select" id="productGroupSelect">
@@ -411,13 +468,11 @@ body.presentation-mode .exit-btn { display:flex; }
       </button>
     </div>
 
-    <!-- GRID — rendered dynamically -->
     <div class="grid-area slots-4" id="grid"></div>
 
   </div>
 </div>
 
-<!-- FULLSCREEN -->
 <div class="fullscreen-overlay" id="fullscreenOverlay">
   <div class="fullscreen-bar">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
@@ -520,7 +575,7 @@ const PERIOD_DATE_MAP = {
   "April 2026":     "2026-04-01T00:00:00",
 };
 
-let activeBrand        = '';   // single dropdown — was a Set, now plain string
+let activeBrand        = '';   
 let activePeriod       = '';
 let activeChannel      = '';
 let activeProductGroup = '';
@@ -620,7 +675,7 @@ function buildFilterParam() {
     parts.push(`${BRAND_TABLE_ENCODED}/${BRAND_FIELD} eq '${activeBrand}'`);
   }
 
-  // 2. Period — PeriodDate is Date/time, must use datetime'' OData syntax
+  // 2. Period
   if (activePeriod) {
     const isoDate = PERIOD_DATE_MAP[activePeriod];
     if (isoDate) {
@@ -767,6 +822,11 @@ function generateDashboard() {
     loadCard('card' + i, slotValues['slot' + i] || '', i - 1);
   }
   showToast('Dashboard updated — ' + currentSlots + ' panels');
+
+  // Auto-close sidebar on mobile devices after generating for a better view
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.add('collapsed');
+  }
 }
 
 // ── NAVIGATION ──────────────────────────────────────────────────────────────
@@ -928,10 +988,46 @@ document.addEventListener('keydown', e => {
   }
 });
 
+function toggleTheme() {
+
+  document.body.classList.toggle("light-mode");
+
+  const isLight =
+      document.body.classList.contains("light-mode");
+
+  localStorage.setItem(
+      "dashboardTheme",
+      isLight ? "light" : "dark"
+  );
+
+  showToast(
+      isLight
+          ? "Light mode enabled"
+          : "Dark mode enabled"
+  );
+}
+
+(function() {
+
+  const saved =
+      localStorage.getItem("dashboardTheme");
+
+  if(saved === "light") {
+      document.body.classList.add("light-mode");
+  }
+
+})();
+
 // ── INIT ────────────────────────────────────────────────────────────────────
 slotValues = { slot1:'summary', slot2:'gross', slot3:'channel', slot4:'top20' };
 renderSidebarSlots(4);
 renderGrid(4);
+
+// Initialize mobile view: start with the sidebar collapsed to save screen space
+if (window.innerWidth <= 768) {
+  document.getElementById('sidebar').classList.add('collapsed');
+}
+
 generateDashboard();
 </script>
 </body>
